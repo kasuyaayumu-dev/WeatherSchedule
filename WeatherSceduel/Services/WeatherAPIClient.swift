@@ -1,8 +1,9 @@
 import Foundation
 
 struct WeatherAPIClient {
-  // TODO: MacのローカルIPに置き換えてください（例: "192.168.1.10"）
-  var host = "192.168.68.62"
+  // シミュレーターは Mac の localhost を共有するため 127.0.0.1 で接続できる。
+  // 実機で動かす場合は Mac のローカル IP（例: "192.168.1.10"）に変更する。
+  var host = "127.0.0.1"
   var port = 8000
 
   func fetchForecast(year: Int, month: Int, day: Int) async throws -> ForecastResponse {
