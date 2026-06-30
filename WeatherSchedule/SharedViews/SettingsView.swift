@@ -74,6 +74,8 @@ struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+                
+                DebugSettingsSection()
             }
             .navigationTitle("設定")
             .toolbar {

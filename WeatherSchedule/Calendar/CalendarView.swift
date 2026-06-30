@@ -1,18 +1,39 @@
 import SwiftUI
 
-/// メイン画面。
-/// ZStack 構造:
-///   1. VStack (TopBar + ScrollView カレンダー本体)
-///   2. フローティングバー (Today / AI Chat)
-///   3. Way Back オーバーレイ (isPresented 時のみ)
+// MARK: - CalendarView（v2）
+//
+// 変更点:
+//   • モーダル表示中もカレンダーを操作できるよう sheet → ZStack/Overlay に切り替えを検討。
+//     → ただし EKEventEditView 等のシステム sheet との相性を保つため、
+//       DayDetailView は引き続き sheet で表示しつつ、
+//       ミニプレーヤーのみを下部 Overlay で管理する構成を採用。
+//   • MiniPlayerState を @State で持ち、モーダル → ミニプレーヤーの遷移を制御。
+//   • フィルター未使用時は isFilteredOut=false で統一（ハイライト方式に対応）。
+//   • デバッグモードフラグを参照（CalendarStore 経由）。
+
+// MARK: - CalendarView（v2）
+
 struct CalendarView: View {
     var store: CalendarStore
     
-    @AppStorage(CalendarDisplaySettings.modeKey) private var displayModeRawValue = CalendarDisplaySettings.defaultMode
-    @AppStorage(CalendarDisplaySettings.weatherFilterKey) private var weatherFilterRawValue = CalendarDisplaySettings.defaultWeatherFilter
-    @State private var showSettings = false
-    @State private var wayBack = WayBackStore()
+    @AppStorage(CalendarDisplaySettings.modeKey)
+    private var displayModeRawValue = CalendarDisplaySettings.defaultMode
+    
+    @AppStorage(CalendarDisplaySettings.weatherFilterKey)
+    private var weatherFilterRawValue = CalendarDisplaySettings.defaultWeatherFilter
+    
+    @AppStorage(DebugSettings.miniPlayerAppStorageKey)
+    private var miniPlayerEnabled = true
+    
+    @State private var showSettings    = false
+    @State private var wayBack         = WayBackStore()
     @State private var externalCalendar = ExternalCalendarStore()
+    @State private var miniPlayer      = MiniPlayerState()
+    @State private var animateGradient = false
+    
+    private var isFilterActive: Bool {
+        weatherFilter != .all
+    }
     
     private let weekdaySymbols = ["S", "M", "T", "W", "T", "F", "S"]
     
@@ -47,18 +68,17 @@ struct CalendarView: View {
                             .id(month.id)
                         }
                     }
-                    .padding(.bottom, 88)
+                    .padding(.bottom, miniPlayer.isVisible ? 140 : 88)
                     .scrollTargetLayout()
                 }
                 .scrollPosition(id: $store.visibleMonthID, anchor: .top)
             }
             .background(Color(.systemGroupedBackground))
             
-            // ── 2. フローティングバー ─────────────────────────
-            floatingBar(store: store)
+            // ── 2. フローティングバー / ミニプレーヤー ────────
+            bottomArea(store: store)
         }
-        // ── 4. Way Back オーバーレイ ──────────────────────
-//        .wayBackOverlay(store: wayBack, referenceDate: store.selectedDate)
+        // ── 3. Way Back オーバーレイ ──────────────────────────
         .wayBackFullScreen(store: wayBack, referenceDate: store.selectedDate)
         .onAppear {
             DispatchQueue.main.async {
@@ -67,8 +87,15 @@ struct CalendarView: View {
             store.prefetchMonth(id: store.todayMonthID)
             refreshExternalCalendarIfNeeded(store: store)
         }
+        // 🌟追加: 新しいセルが選択されたらミニプレイヤーを閉じる
+        .onChange(of: store.selectedDay) { _, newDay in
+            if newDay != nil && miniPlayer.isVisible {
+                miniPlayer.hide()
+            }
+        }
         .onChange(of: store.visibleMonthID) { _, newID in
             store.prefetchMonth(id: newID)
+            HapticsManager.monthChanged()
         }
         .onChange(of: displayModeRawValue) { _, _ in
             refreshExternalCalendarIfNeeded(store: store)
@@ -78,12 +105,20 @@ struct CalendarView: View {
                 refreshExternalCalendarIfNeeded(store: store, force: true)
             }
         }
+        // ── 4. DayDetailView シート ────────────────────────────
         .sheet(
             isPresented: Binding(
-                get: { store.selectedDay != nil },
+                get: { store.selectedDay != nil && !miniPlayer.isVisible },
                 set: { isPresented in
+                    // 🌟修正: スワイプで閉じた時は clearSelection せずにミニプレイヤーを表示
                     if !isPresented {
-                        store.clearSelection()
+                        if miniPlayerEnabled,
+                           case .loaded(let forecast) = store.forecastState,
+                           let date = store.selectedDate {
+                            miniPlayer.show(forecast: forecast, date: date)
+                        } else {
+                            store.clearSelection()
+                        }
                     }
                 }
             )
@@ -92,41 +127,74 @@ struct CalendarView: View {
                 DayDetailView(
                     date: day.date,
                     state: store.forecastState,
-                    onClose: { store.clearSelection() },
+                    onClose: {
+                        // 🌟修正: 完了ボタンで閉じたときは完全にクリアする
+                        store.clearSelection()
+                        miniPlayer.hide()
+                    },
                     onRetry: { store.retry() },
                     onWayBack: {
-                        let referenceDate = day.date
-                        store.clearSelection()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            wayBack.open(referenceDate: referenceDate)
+                        wayBack.open(referenceDate: day.date)
+                        HapticsManager.wayBackToggled()
+                    },
+                    onMinimize: miniPlayerEnabled ? {
+                        if case .loaded(let forecast) = store.forecastState {
+                            miniPlayer.show(forecast: forecast, date: day.date)
+                            // 選択日を保持したまま閉じる（isPresentedがfalseになる）
                         }
-                    }
+                    } : nil
                 )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                // 🌟修正: .onDisappear は Bindingのsetで処理するため削除
             }
         }
     }
     
-    private var displayMode: CalendarDisplayMode {
-        CalendarDisplayMode(rawValue: displayModeRawValue) ?? .weatherIcon
+    // MARK: - 下部エリア（ミニプレーヤー or フローティングバー）
+    
+    // ... 以降のコードは変更なし ...
+    
+    // MARK: - 下部エリア（ミニプレーヤー or フローティングバー）
+    
+    @ViewBuilder
+    private func bottomArea(store: CalendarStore) -> some View {
+        if miniPlayer.isVisible,
+           let forecast = miniPlayer.forecast,
+           let date = miniPlayer.date {
+            MiniPlayerBar(
+                forecast: forecast,
+                date: date,
+                onExpand: {
+                    // ミニプレーヤーを非表示にしてモーダルを再表示
+                    miniPlayer.hide()
+                },
+                onDismiss: {
+                    miniPlayer.clear()
+                    store.clearSelection()
+                },
+                onTodayTap: {
+                    store.scrollToTodayMonth()
+                },
+                onAIChatTap: {
+                    print("AI Chat tapped from mini player")
+                }
+            )
+            .transition(.asymmetric(
+                insertion: .move(edge: .bottom).combined(with: .opacity),
+                removal: .move(edge: .bottom).combined(with: .opacity)
+            ))
+        } else if !miniPlayer.isVisible {
+            floatingBar(store: store)
+                .transition(.opacity)
+        }
     }
     
-    private var weatherFilter: CalendarWeatherFilter {
-        CalendarWeatherFilter(rawValue: weatherFilterRawValue) ?? .all
-    }
-    
-    private func refreshExternalCalendarIfNeeded(store: CalendarStore, force: Bool = false) {
-        guard force || displayMode == .schedule else { return }
-        Task { await externalCalendar.refresh(months: store.months) }
-    }
-    
-    // MARK: - フローティングバー
+    // MARK: - フローティングバー（通常時）
     
     @ViewBuilder
     private func floatingBar(store: CalendarStore) -> some View {
         HStack(spacing: 16) {
-            // Today ボタン
             Button {
                 store.scrollToTodayMonth()
             } label: {
@@ -149,21 +217,21 @@ struct CalendarView: View {
             
             Spacer()
             
-            // AI Chat ボタン（Apple Intelligence 風）
             Button {
                 print("AI Chat tapped")
             } label: {
                 ZStack {
                     Circle()
                         .fill(
-                            AngularGradient(
+                            LinearGradient(
                                 colors: [
                                     Color(red: 0.95, green: 0.4, blue: 0.9),
-                                    Color(red: 0.4, green: 0.6, blue: 1.0),
-                                    Color(red: 0.3, green: 0.9, blue: 0.8),
-                                    Color(red: 0.95, green: 0.4, blue: 0.9)
+                                    Color(red: 0.4,  green: 0.6, blue: 1.0),
+                                    Color(red: 0.3,  green: 0.9, blue: 0.8)
                                 ],
-                                center: .center
+                                // 🌟 こちらも同様に近づけたり離したりを繰り返す
+                                startPoint: animateGradient ? UnitPoint(x: 0.1, y: 0.1) : UnitPoint(x: -0.3, y: -0.3),
+                                endPoint: animateGradient ? UnitPoint(x: 0.9, y: 0.9) : UnitPoint(x: 1.3, y: 1.3)
                             )
                         )
                         .frame(width: 44, height: 44)
@@ -172,7 +240,13 @@ struct CalendarView: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
-                        .symbolEffect(.pulse)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("AIチャット")
+            .onAppear {
+                withAnimation(.easeInOut(duration: 7).repeatForever(autoreverses: true)) {
+                    animateGradient = true
                 }
             }
             .buttonStyle(.plain)
@@ -195,5 +269,20 @@ struct CalendarView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
+    }
+    
+    // MARK: - ヘルパー
+    
+    private var displayMode: CalendarDisplayMode {
+        CalendarDisplayMode(rawValue: displayModeRawValue) ?? .weatherIcon
+    }
+    
+    private var weatherFilter: CalendarWeatherFilter {
+        CalendarWeatherFilter(rawValue: weatherFilterRawValue) ?? .all
+    }
+    
+    private func refreshExternalCalendarIfNeeded(store: CalendarStore, force: Bool = false) {
+        guard force || displayMode == .schedule else { return }
+        Task { await externalCalendar.refresh(months: store.months) }
     }
 }

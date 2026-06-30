@@ -33,6 +33,13 @@
 		1419CF5B2FF2322F004AFF99 /* WeatherScheduleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF5A2FF2322F004AFF99 /* WeatherScheduleApp.swift */; };
 		1419CF5D2FF2325D004AFF99 /* CalendarDisplaySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF5C2FF2325D004AFF99 /* CalendarDisplaySettings.swift */; };
 		1419CF5F2FF23292004AFF99 /* ExternalCalendarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF5E2FF23292004AFF99 /* ExternalCalendarStore.swift */; };
+		1419CF612FF2531F004AFF99 /* WeatherKitClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF602FF2531F004AFF99 /* WeatherKitClient.swift */; };
+		1419CF632FF25341004AFF99 /* HapticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF622FF25341004AFF99 /* HapticsManager.swift */; };
+		1419CF652FF337CC004AFF99 /* MockWeatherData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF642FF337CC004AFF99 /* MockWeatherData.swift */; };
+		1419CF672FF337D6004AFF99 /* DebugSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF662FF337D6004AFF99 /* DebugSettings.swift */; };
+		1419CF692FF337F5004AFF99 /* AIInsightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF682FF337F5004AFF99 /* AIInsightView.swift */; };
+		1419CF6B2FF337FC004AFF99 /* MiniPlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF6A2FF337FC004AFF99 /* MiniPlayerBar.swift */; };
+		1419CF6D2FF3520E004AFF99 /* SquishyEdgeEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF6C2FF3520B004AFF99 /* SquishyEdgeEffect.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +50,13 @@
 		1419CF5A2FF2322F004AFF99 /* WeatherScheduleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherScheduleApp.swift; sourceTree = "<group>"; };
 		1419CF5C2FF2325D004AFF99 /* CalendarDisplaySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDisplaySettings.swift; sourceTree = "<group>"; };
 		1419CF5E2FF23292004AFF99 /* ExternalCalendarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalCalendarStore.swift; sourceTree = "<group>"; };
+		1419CF602FF2531F004AFF99 /* WeatherKitClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherKitClient.swift; sourceTree = "<group>"; };
+		1419CF622FF25341004AFF99 /* HapticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticsManager.swift; sourceTree = "<group>"; };
+		1419CF642FF337CC004AFF99 /* MockWeatherData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWeatherData.swift; sourceTree = "<group>"; };
+		1419CF662FF337D6004AFF99 /* DebugSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettings.swift; sourceTree = "<group>"; };
+		1419CF682FF337F5004AFF99 /* AIInsightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIInsightView.swift; sourceTree = "<group>"; };
+		1419CF6A2FF337FC004AFF99 /* MiniPlayerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerBar.swift; sourceTree = "<group>"; };
+		1419CF6C2FF3520B004AFF99 /* SquishyEdgeEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquishyEdgeEffect.swift; sourceTree = "<group>"; };
 		14203EB22FF140DC00698514 /* AppDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDataManager.swift; sourceTree = "<group>"; };
 		14203EB42FF140DC00698514 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		14203EB62FF140DC00698514 /* CalendarCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarCellView.swift; sourceTree = "<group>"; };
@@ -112,6 +126,8 @@
 				14203EBA2FF140DC00698514 /* DayDetailView.swift */,
 				14203EBB2FF140DC00698514 /* TopBarView.swift */,
 				1419CF582FF231F2004AFF99 /* CalendarEventEditView.swift */,
+				1419CF682FF337F5004AFF99 /* AIInsightView.swift */,
+				1419CF6A2FF337FC004AFF99 /* MiniPlayerBar.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
@@ -119,11 +135,13 @@
 		14203EC12FF140DC00698514 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				1419CF6C2FF3520B004AFF99 /* SquishyEdgeEffect.swift */,
 				14203EBD2FF140DC00698514 /* CacheSettings.swift */,
 				14203EBE2FF140DC00698514 /* CalendarModels.swift */,
 				14203EBF2FF140DC00698514 /* Models.swift */,
 				14203EC02FF140DC00698514 /* WeatherCondition.swift */,
 				1419CF5C2FF2325D004AFF99 /* CalendarDisplaySettings.swift */,
+				1419CF622FF25341004AFF99 /* HapticsManager.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -135,6 +153,8 @@
 				14203EC32FF140DC00698514 /* NetworkMonitor.swift */,
 				14203EC42FF140DC00698514 /* WeatherAPIClient.swift */,
 				1419CF5E2FF23292004AFF99 /* ExternalCalendarStore.swift */,
+				1419CF602FF2531F004AFF99 /* WeatherKitClient.swift */,
+				1419CF642FF337CC004AFF99 /* MockWeatherData.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -144,6 +164,7 @@
 			children = (
 				14203EC62FF140DC00698514 /* SettingsView.swift */,
 				14203EC72FF140DC00698514 /* StopAppView.swift */,
+				1419CF662FF337D6004AFF99 /* DebugSettings.swift */,
 			);
 			path = SharedViews;
 			sourceTree = "<group>";
@@ -243,11 +264,17 @@
 				1419CF3A2FF142A2004AFF99 /* AppDataManager.swift in Sources */,
 				1419CF5D2FF2325D004AFF99 /* CalendarDisplaySettings.swift in Sources */,
 				1419CF3C2FF142A2004AFF99 /* ContentView.swift in Sources */,
+				1419CF6B2FF337FC004AFF99 /* MiniPlayerBar.swift in Sources */,
 				1419CF3D2FF142A2004AFF99 /* CalendarCellView.swift in Sources */,
 				1419CF3E2FF142A2004AFF99 /* CalendarMonthView.swift in Sources */,
 				1419CF3F2FF142A2004AFF99 /* CalendarStore.swift in Sources */,
+				1419CF612FF2531F004AFF99 /* WeatherKitClient.swift in Sources */,
+				1419CF692FF337F5004AFF99 /* AIInsightView.swift in Sources */,
 				1419CF402FF142A2004AFF99 /* CalendarView.swift in Sources */,
+				1419CF6D2FF3520E004AFF99 /* SquishyEdgeEffect.swift in Sources */,
+				1419CF672FF337D6004AFF99 /* DebugSettings.swift in Sources */,
 				1419CF412FF142A2004AFF99 /* DayDetailView.swift in Sources */,
+				1419CF632FF25341004AFF99 /* HapticsManager.swift in Sources */,
 				1419CF422FF142A2004AFF99 /* TopBarView.swift in Sources */,
 				1419CF432FF142A2004AFF99 /* CacheSettings.swift in Sources */,
 				1419CF442FF142A2004AFF99 /* CalendarModels.swift in Sources */,
@@ -262,6 +289,7 @@
 				1419CF4C2FF142A2004AFF99 /*  Waybackview.swift in Sources */,
 				1419CF4D2FF142A2004AFF99 /* Waybackcard.swift in Sources */,
 				1419CF4E2FF142A2004AFF99 /* Waybackcardstack.swift in Sources */,
+				1419CF652FF337CC004AFF99 /* MockWeatherData.swift in Sources */,
 				1419CF4F2FF142A2004AFF99 /* Waybackstore.swift in Sources */,
 				1419CF5F2FF23292004AFF99 /* ExternalCalendarStore.swift in Sources */,
 				1419CF592FF231F2004AFF99 /* CalendarEventEditView.swift in Sources */,
