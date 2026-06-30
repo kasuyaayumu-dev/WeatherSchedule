@@ -39,69 +39,75 @@ struct SquishyAnimatedGlassModifier: AnimatableModifier {
         content.mask(path)
             .background {
                 path
-                    .fill(.ultraThinMaterial) // ウェイバックの宇宙背景に馴染むすりガラス効果
+                    .fill(.ultraThinMaterial)
                     .environment(\.colorScheme, .dark)
                     .shadow(color: .black.opacity(0.2), radius: 6)
             }
     }
 }
 
-// MARK: - 画面操作を一切邪魔しない専用Modifier
+// MARK: - カード操作と「同時に」、指の実座標に頂点を一致させるModifier
+//
+// 【今回の核心修正】
+// 以前の実装は rawScrollOffset の差分の符号だけを見て
+// 「中央 +80 / -80」に固定的に動かしていたため、実際の指の位置とは無関係だった。
+//
+// 今回は WayBackView の scrollTrack に追加した simultaneousGesture が
+// store.touchLocationY に指の生のY座標（ScrollViewのローカル座標 = 画面座標と一致）
+// を書き込んでいるので、それを直接 midPointY に反映する。
+// store.touchLocationY が nil になった瞬間（指を離した瞬間）に
+// progress を 0 に戻し、中央へ収縮させる。
+//
+// ジェスチャー自体は持たない（simultaneousGesture は scrollTrack 側にあるため）。
+// よってカード操作・×ボタン・ヘッダードラッグと完全に独立して動作する。
 struct WayBackSquishyModifier: ViewModifier {
     var store: WayBackStore
     
     @State private var pathProgress: CGFloat = 0
-    @State private var midPointY: CGFloat = UIScreen.main.bounds.height / 2
-    @State private var resetTask: Task<Void, Never>? = nil
+    @State private var midPointY: CGFloat = 0
     
     func body(content: Content) -> some View {
-        ZStack {
-            // 1. 元のコンテンツ（ジェスチャーは追加しないので完全に安全！）
-            content
-                // ⚠️ ここを `store.rawScrollOffset` に修正しました！
-                .onChange(of: store.rawScrollOffset) { oldValue, newValue in
-                    // スクロールが発生したら即座に一定の幅で伸ばす
-                    withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.7)) {
-                        pathProgress = 1.0
-                    }
-                    
-                    // 指の位置の代わりに、スクロール方向（上か下か）に合わせて中心点を上下に動かす
-                    let isScrollingDown = newValue > oldValue
-                    let targetY = UIScreen.main.bounds.height / 2 + (isScrollingDown ? 80 : -80)
-                    withAnimation(.interactiveSpring(response: 0.4, dampingFraction: 0.7)) {
-                        midPointY = targetY
-                    }
-                    
-                    // スクロールが止まったら（0.15秒後に）滑らかに戻す
-                    resetTask?.cancel()
-                    resetTask = Task {
-                        try? await Task.sleep(nanoseconds: 150_000_000)
-                        if !Task.isCancelled {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-                                pathProgress = 0
-                                midPointY = UIScreen.main.bounds.height / 2 // 中心に戻す
-                            }
-                        }
-                    }
-                }
+        GeometryReader { geo in
+            let screenHeight = geo.size.height
+            let screenWidth = geo.size.width
             
-            // 2. エフェクト描画レイヤー
-            GeometryReader { geometry in
-                let w = geometry.size.width
-                ZStack {
+            content
+                .onAppear {
+                    if midPointY == 0 { midPointY = screenHeight / 2 }
+                }
+                .onChange(of: store.touchLocationY) { _, newValue in
+                    handleTouchChange(newValue, screenHeight: screenHeight)
+                }
+                .overlay(alignment: .topTrailing) {
                     Rectangle()
                         .fill(.clear)
+                        .frame(width: screenWidth, height: screenHeight)
                         .modifier(
                             SquishyAnimatedGlassModifier(
                                 progress: pathProgress,
                                 midPointY: midPointY,
-                                edgeX: w
+                                edgeX: screenWidth
                             )
                         )
+                        .allowsHitTesting(false)
                 }
-                .allowsHitTesting(false) // タッチイベントを完全に貫通させる
+        }
+        .ignoresSafeArea()
+    }
+    
+    private func handleTouchChange(_ newValue: CGFloat?, screenHeight: CGFloat) {
+        if let y = newValue {
+            // 指が動いている間：伸びた状態を維持しつつ、頂点を指の位置にピタリと合わせる
+            withAnimation(.interactiveSpring(response: 0.22, dampingFraction: 0.75)) {
+                pathProgress = 1.0
+                midPointY = y
             }
-            .ignoresSafeArea()
+        } else {
+            // 指を離した：スッと中央に戻りながら縮む
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                pathProgress = 0
+                midPointY = screenHeight / 2
+            }
         }
     }
 }

@@ -12,14 +12,14 @@ struct MiniPlayerBar: View {
     var onDismiss: () -> Void
     var onTodayTap: () -> Void
     var onAIChatTap: () -> Void
-
+    
     // ミニプレーヤーが画面外から滑り込む
     @State private var appeared = false
     
     @State private var dragOffset: CGFloat = 0
-
+    
     private let condition: WeatherCondition
-
+    
     init(
         forecast: ForecastResponse,
         date: Date,
@@ -39,167 +39,180 @@ struct MiniPlayerBar: View {
             temperature: forecast.aiPrediction.referencePastAverageTemp
         )
     }
-
+    
     var body: some View {
-            VStack(spacing: 0) {
-                // ── ミニプレーヤー本体 ──────────────────────────
-                // 🌟修正: ButtonをやめてHStackに直接onTapGestureを付ける（誤爆防止）
-                HStack(spacing: 12) {
-                    // 天気アイコン
-                    Image(systemName: condition.symbol)
-                        .symbolRenderingMode(.multicolor)
-                        .font(.system(size: 22))
-                        .frame(width: 34, height: 34)
-
-                    // 日付
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(date.formatted(.dateTime.month(.abbreviated).day()))
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(condition.label)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
+        VStack(spacing: 0) {
+            // ── ミニプレーヤー本体 ──────────────────────────
+            // 🌟修正: ButtonをやめてHStackに直接onTapGestureを付ける（誤爆防止）
+            HStack(spacing: 12) {
+                // 天気アイコン
+                Image(systemName: condition.symbol)
+                    .symbolRenderingMode(.multicolor)
+                    .font(.system(size: 22))
+                    .frame(width: 34, height: 34)
+                
+                // 日付
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(date.formatted(.dateTime.month(.abbreviated).day()))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(condition.label)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
+                
+                Spacer()
+                
+                // 降水確率
+                metricPill(
+                    value: String(format: "%.0f%%", forecast.aiPrediction.rainProbabilityPercent),
+                    symbol: "drop.fill",
+                    tint: .blue
+                )
+                
+                // 気温
+                metricPill(
+                    value: String(format: "%.0f°", forecast.aiPrediction.referencePastAverageTemp),
+                    symbol: "thermometer.medium",
+                    tint: .orange
+                )
+                
+                // 閉じるボタン
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        onDismiss()
                     }
-
-                    Spacer()
-
-                    // 降水確率
-                    metricPill(
-                        value: String(format: "%.0f%%", forecast.aiPrediction.rainProbabilityPercent),
-                        symbol: "drop.fill",
-                        tint: .blue
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .symbolRenderingMode(.hierarchical)
+                        .font(.system(size: 20))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle()) // 全体に判定を持たせる
+            .onTapGesture {
+                onExpand() // タップ時のみ展開
+            }
+            
+            Divider()
+                .padding(.horizontal, 12)
+            
+            // ── フローティングバー（Today / AI Chat） ────────
+            HStack(spacing: 16) {
+                Button {
+                    onTodayTap()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.circle.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("Today")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 11)
+                    .background(
+                        Capsule()
+                            .fill(Color.accentColor)
+                            .shadow(color: Color.accentColor.opacity(0.35), radius: 8, y: 4)
                     )
-
-                    // 気温
-                    metricPill(
-                        value: String(format: "%.0f°", forecast.aiPrediction.referencePastAverageTemp),
-                        symbol: "thermometer.medium",
-                        tint: .orange
-                    )
-
-                    // 閉じるボタン
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                }
+                .buttonStyle(.plain)
+                
+                Spacer()
+                
+                Button {
+                    onAIChatTap()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                AngularGradient(
+                                    colors: [
+                                        Color(red: 0.95, green: 0.4, blue: 0.9),
+                                        Color(red: 0.4,  green: 0.6, blue: 1.0),
+                                        Color(red: 0.3,  green: 0.9, blue: 0.8),
+                                        Color(red: 0.95, green: 0.4, blue: 0.9)
+                                    ],
+                                    center: .center
+                                )
+                            )
+                            .frame(width: 44, height: 44)
+                            .shadow(color: Color(red: 0.7, green: 0.4, blue: 1.0).opacity(0.5), radius: 10, y: 4)
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .symbolEffect(.pulse)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("AIチャット")
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 8)
+        }
+        .background(
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea(edges: .bottom)
+                .shadow(color: .black.opacity(0.08), radius: 8, y: -2)
+        )
+        .offset(y: appeared ? dragOffset : 80)
+        .opacity(appeared ? (1.0 - dragOffset / 300.0) : 0)
+        // 🌟修正: minimumDistanceを追加し、アニメーションを自然に調整
+        // 🌟修正: 上下両方向のスワイプに対応
+        .gesture(
+            DragGesture(minimumDistance: 15) // 指を15px動かさないとスワイプ開始とみなさない（誤爆防止）
+                .onChanged { value in
+                    if value.translation.height > 0 {
+                        // 下方向（閉じる）: ドラッグ中は即座に指に追従
+                        dragOffset = value.translation.height
+                    } else {
+                        // 上方向（展開）: 引っ張りすぎないよう少し抵抗感を持たせる（0.4倍）
+                        dragOffset = value.translation.height * 0.4
+                    }
+                }
+                .onEnded { value in
+                    // 1. 下スワイプで完全に閉じる判定
+                    if value.translation.height > 60 || value.predictedEndTranslation.height > 150 {
+                        // 抵抗なくスッと下に落ちるアニメーション
+                        withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 1.0, blendDuration: 0.1)) {
+                            dragOffset = UIScreen.main.bounds.height / 2
+                        }
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                             onDismiss()
                         }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .symbolRenderingMode(.hierarchical)
-                            .font(.system(size: 20))
-                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .contentShape(Rectangle()) // 全体に判定を持たせる
-                .onTapGesture {
-                    onExpand() // タップ時のみ展開
-                }
-
-                Divider()
-                    .padding(.horizontal, 12)
-
-                // ── フローティングバー（Today / AI Chat） ────────
-                HStack(spacing: 16) {
-                    Button {
-                        onTodayTap()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "calendar.circle.fill")
-                                .font(.system(size: 18, weight: .semibold))
-                            Text("Today")
-                                .font(.subheadline.weight(.semibold))
+                    // 2. 上スワイプでモーダルを展開する判定 🌟新規追加
+                    else if value.translation.height < -40 || value.predictedEndTranslation.height < -150 {
+                        // 一瞬元の位置に戻しつつ、モーダル展開アクションを呼ぶ
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = 0
                         }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 11)
-                        .background(
-                            Capsule()
-                                .fill(Color.accentColor)
-                                .shadow(color: Color.accentColor.opacity(0.35), radius: 8, y: 4)
-                        )
+                        onExpand()
                     }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-
-                    Button {
-                        onAIChatTap()
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    AngularGradient(
-                                        colors: [
-                                            Color(red: 0.95, green: 0.4, blue: 0.9),
-                                            Color(red: 0.4,  green: 0.6, blue: 1.0),
-                                            Color(red: 0.3,  green: 0.9, blue: 0.8),
-                                            Color(red: 0.95, green: 0.4, blue: 0.9)
-                                        ],
-                                        center: .center
-                                    )
-                                )
-                                .frame(width: 44, height: 44)
-                                .shadow(color: Color(red: 0.7, green: 0.4, blue: 1.0).opacity(0.5), radius: 10, y: 4)
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .symbolEffect(.pulse)
+                    // 3. どちらの条件も満たさない場合は元の位置にバネ感を持たせて戻る
+                    else {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            dragOffset = 0
                         }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("AIチャット")
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 8)
-            }
-            .background(
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .ignoresSafeArea(edges: .bottom)
-                    .shadow(color: .black.opacity(0.08), radius: 8, y: -2)
-            )
-            .offset(y: appeared ? dragOffset : 80)
-            .opacity(appeared ? (1.0 - dragOffset / 300.0) : 0)
-            // 🌟修正: minimumDistanceを追加し、アニメーションを自然に調整
-            .gesture(
-                DragGesture(minimumDistance: 15) // 指を15px動かさないとスワイプ開始とみなさない（誤爆防止）
-                    .onChanged { value in
-                        if value.translation.height > 0 {
-                            // ドラッグ中は即座に指に追従
-                            dragOffset = value.translation.height
-                        }
-                    }
-                    .onEnded { value in
-                        // 閉じる判定：一定距離スワイプするか、勢いよくスワイプした時
-                        if value.translation.height > 60 || value.predictedEndTranslation.height > 150 {
-                            // 抵抗なくスッと下に落ちるアニメーション
-                            withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 1.0, blendDuration: 0.1)) {
-                                dragOffset = UIScreen.main.bounds.height / 2
-                            }
-                            
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                                onDismiss()
-                            }
-                        } else {
-                            // 閉じる条件に満たなかった場合は、少しバネ感を持たせて戻る
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                dragOffset = 0
-                            }
-                        }
-                    }
-            )
-            .onAppear {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
-                    appeared = true
-                }
+        )
+        .onAppear {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.82)) {
+                appeared = true
             }
         }
-
+    }
+    
     // MARK: - メトリクスピル
-
+    
     private func metricPill(value: String, symbol: String, tint: Color) -> some View {
         HStack(spacing: 4) {
             Image(systemName: symbol)
@@ -228,7 +241,7 @@ final class MiniPlayerState {
     var isVisible: Bool = false
     var forecast: ForecastResponse?
     var date: Date?
-
+    
     func show(forecast: ForecastResponse, date: Date) {
         self.forecast = forecast
         self.date     = date
@@ -236,13 +249,13 @@ final class MiniPlayerState {
             isVisible = true
         }
     }
-
+    
     func hide() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
             isVisible = false
         }
     }
-
+    
     func clear() {
         isVisible = false
         forecast  = nil

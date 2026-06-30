@@ -31,6 +31,9 @@ struct CalendarView: View {
     @State private var miniPlayer      = MiniPlayerState()
     @State private var animateGradient = false
     
+    /// DayDetailView シートの現在の高さ。Way Back を閉じた直後に .medium へ戻すために使う。
+    @State private var detailDetent: PresentationDetent = .large
+    
     private var isFilterActive: Bool {
         weatherFilter != .all
     }
@@ -92,6 +95,9 @@ struct CalendarView: View {
             if newDay != nil && miniPlayer.isVisible {
                 miniPlayer.hide()
             }
+            if newDay != nil {
+                detailDetent = .large
+            }
         }
         .onChange(of: store.visibleMonthID) { _, newID in
             store.prefetchMonth(id: newID)
@@ -107,48 +113,54 @@ struct CalendarView: View {
         }
         // ── 4. DayDetailView シート ────────────────────────────
         .sheet(
-            isPresented: Binding(
-                get: { store.selectedDay != nil && !miniPlayer.isVisible },
-                set: { isPresented in
-                    // 🌟修正: スワイプで閉じた時は clearSelection せずにミニプレイヤーを表示
-                    if !isPresented {
-                        if miniPlayerEnabled,
-                           case .loaded(let forecast) = store.forecastState,
-                           let date = store.selectedDate {
-                            miniPlayer.show(forecast: forecast, date: date)
-                        } else {
-                            store.clearSelection()
+                    isPresented: Binding(
+                        get: { store.selectedDay != nil && !miniPlayer.isVisible },
+                        set: { isPresented in
+                            // 🌟修正: スワイプで閉じた時は clearSelection せずにミニプレイヤーを表示
+                            if !isPresented {
+                                if miniPlayerEnabled,
+                                   case .loaded(let forecast) = store.forecastState,
+                                   let date = store.selectedDate {
+                                    miniPlayer.show(forecast: forecast, date: date)
+                                } else {
+                                    store.clearSelection()
+                                }
+                            }
                         }
+                    )
+                ) {
+                    if let day = store.selectedDay {
+                        DayDetailView(
+                            date: day.date,
+                            state: store.forecastState,
+                            onClose: {
+                                // 🌟修正: 完了ボタンで閉じたときは完全にクリアする
+                                store.clearSelection()
+                                miniPlayer.hide()
+                            },
+                            onRetry: { store.retry() },
+                            onWayBack: {
+                                // Way Back が閉じられたら、シートをハーフサイズへ戻す
+                                wayBack.onDismiss = {
+                                    detailDetent = .medium
+                                }
+                                wayBack.open(referenceDate: day.date)
+                                HapticsManager.wayBackToggled()
+                            },
+                            onMinimize: miniPlayerEnabled ? {
+                                if case .loaded(let forecast) = store.forecastState {
+                                    miniPlayer.show(forecast: forecast, date: day.date)
+                                    // 選択日を保持したまま閉じる（isPresentedがfalseになる）
+                                }
+                            } : nil
+                        )
+                        .presentationDetents([.medium, .large], selection: $detailDetent)
+                        .presentationDragIndicator(.visible)
+                        
+                        // 🌟 ここを追加！ハーフサイズ（.medium）までの高さのとき、背後のカレンダーの操作を許可する
+                        .presentationBackgroundInteraction(.enabled(upThrough: .medium))
                     }
                 }
-            )
-        ) {
-            if let day = store.selectedDay {
-                DayDetailView(
-                    date: day.date,
-                    state: store.forecastState,
-                    onClose: {
-                        // 🌟修正: 完了ボタンで閉じたときは完全にクリアする
-                        store.clearSelection()
-                        miniPlayer.hide()
-                    },
-                    onRetry: { store.retry() },
-                    onWayBack: {
-                        wayBack.open(referenceDate: day.date)
-                        HapticsManager.wayBackToggled()
-                    },
-                    onMinimize: miniPlayerEnabled ? {
-                        if case .loaded(let forecast) = store.forecastState {
-                            miniPlayer.show(forecast: forecast, date: day.date)
-                            // 選択日を保持したまま閉じる（isPresentedがfalseになる）
-                        }
-                    } : nil
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                // 🌟修正: .onDisappear は Bindingのsetで処理するため削除
-            }
-        }
     }
     
     // MARK: - 下部エリア（ミニプレーヤー or フローティングバー）

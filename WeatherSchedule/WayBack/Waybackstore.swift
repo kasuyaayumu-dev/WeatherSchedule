@@ -52,8 +52,17 @@ final class WayBackStore {
     var referenceMonth: Int
     var referenceDay: Int?
     
+    /// Way Back が閉じられた瞬間（スワイプ／×ボタン問わず）に1回だけ呼ばれる。
+    /// 背後のシートの detent をハーフサイズへ戻す等、呼び出し側の事後処理に使う。
+    var onDismiss: (() -> Void)?
+    
     /// ScrollView の contentOffset.y（PreferenceKey から更新）
     var rawScrollOffset: CGFloat = 0
+    
+    /// 指の現在のスクリーン上のY座標（simultaneousGestureで取得）。
+    /// SquishyEdgeEffect が「頂点とタッチ位置を一致させる」ために参照する。
+    /// ドラッグしていないときは nil。
+    var touchLocationY: CGFloat? = nil
     
     let cardScrollHeight: CGFloat = 160
     let minYear = 2000
@@ -124,6 +133,7 @@ final class WayBackStore {
     
     func close() {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { isPresented = false }
+        onDismiss?()
     }
     
     func selectYear(_ year: Int) {

@@ -9,13 +9,19 @@ struct WayBackView: View {
     @State private var showScrollIndicator = true
     @State private var indicatorTask: Task<Void, Never>? = nil
     
+    @State private var dismissDragOffset: CGFloat = 0
+    @State private var isDismissDragging = false
+    
+    private let dismissThreshold: CGFloat = 120
+    private let maxDragDistance: CGFloat = 260
+    private let headerHeight: CGFloat = 52 + 24
+    
     var body: some View {
         ZStack {
             spaceBackground
             
             VStack(spacing: 0) {
                 header
-                    .padding(.top, 52)
                 
                 ZStack(alignment: .bottom) {
                     scrollTrack
@@ -28,7 +34,6 @@ struct WayBackView: View {
                 Color.clear.frame(height: 40)
             }
             
-            // スクロールインジケータ
             VStack(spacing: 4) {
                 Image(systemName: "chevron.compact.up")
                 Text("SCROLL")
@@ -42,6 +47,9 @@ struct WayBackView: View {
             .opacity(showScrollIndicator ? 1.0 : 0.0)
             .animation(.easeInOut(duration: 0.4), value: showScrollIndicator)
         }
+        .offset(y: dismissDragOffset)
+        .scaleEffect(dismissScale, anchor: .top)
+        .opacity(dismissOpacity)
         .ignoresSafeArea()
         .wayBackSquishyEffect(store: store)
         .onAppear {
@@ -56,20 +64,85 @@ struct WayBackView: View {
             if showScrollIndicator {
                 showScrollIndicator = false
             }
-            
             indicatorTask?.cancel()
-            
             indicatorTask = Task {
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 guard !Task.isCancelled else { return }
-                
                 showScrollIndicator = true
             }
         }
     }
     
-    // MARK: -
+    // MARK: - 閉じる処理（共通化・単一経路）
     
+    private func performDismiss(fromDrag: Bool) {
+        if fromDrag {
+            withAnimation(.easeOut(duration: 0.22)) {
+                dismissDragOffset = UIScreen.main.bounds.height
+            }
+        }
+        store.close()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            dismissDragOffset = 0
+        }
+    }
+    
+    // MARK: - ヘッダードラッグ
+    
+    private var headerDismissGesture: some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .local)
+            .onChanged { value in
+                guard value.translation.height > 0 else {
+                    dismissDragOffset = 0
+                    return
+                }
+                isDismissDragging = true
+                
+                let raw = value.translation.height
+                if raw <= maxDragDistance {
+                    dismissDragOffset = raw
+                } else {
+                    let overshoot = raw - maxDragDistance
+                    dismissDragOffset = maxDragDistance + overshoot * 0.15
+                }
+            }
+            .onEnded { value in
+                isDismissDragging = false
+                let shouldDismiss = value.translation.height > dismissThreshold
+                    || value.predictedEndTranslation.height > dismissThreshold * 1.5
+                
+                if shouldDismiss {
+                    performDismiss(fromDrag: true)
+                } else {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                        dismissDragOffset = 0
+                    }
+                }
+            }
+    }
+    
+    private var dismissScale: CGFloat {
+        guard dismissDragOffset > 0 else { return 1.0 }
+        let progress = min(dismissDragOffset / maxDragDistance, 1.0)
+        return 1.0 - progress * 0.06
+    }
+    
+    private var dismissOpacity: CGFloat {
+        guard dismissDragOffset > 0 else { return 1.0 }
+        let progress = min(dismissDragOffset / (maxDragDistance * 1.3), 1.0)
+        return 1.0 - progress * 0.35
+    }
+    
+    // MARK: - scrollTrack
+    //
+    // 【今回の追加】
+    // .simultaneousGesture(DragGesture()) を追加。
+    // simultaneousGesture は ScrollView 本体の組み込みジェスチャーと
+    // "同時に・対等に" 動作し、どちらか一方がもう一方を妨げない。
+    // ここで拾った value.location（ScrollView のローカル座標）を
+    // store.touchLocationY に書き込み、SquishyEdgeEffect 側が
+    // それを直接読んでエフェクトの頂点Y座標に反映する。
+    // ドラッグ終了時は nil に戻し、エフェクト側が中央に戻る合図にする。
     private var scrollTrack: some View {
         GeometryReader { geo in
             ScrollView(.vertical, showsIndicators: false) {
@@ -90,30 +163,59 @@ struct WayBackView: View {
             .onPreferenceChange(ScrollOffsetKey.self) { offset in
                 store.rawScrollOffset = max(0, offset)
             }
+            .scrollDisabled(isDismissDragging)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { value in
+                        // ★重要: ここの座標は scrollTrack 自身のローカル座標（上端=0）。
+                        // SquishyEdgeEffect 側は WayBackView 全体（ヘッダー含む）を
+                        // 基準にした GeometryReader を使っているため、
+                        // headerHeight 分のオフセットを足して座標系を揃える。
+                        store.touchLocationY = value.location.y + headerHeight
+                    }
+                    .onEnded { _ in
+                        store.touchLocationY = nil
+                    }
+            )
         }
     }
     
-    // MARK: -
+    // MARK: - ヘッダー
     
     private var header: some View {
-        HStack(alignment: .center) {
-            Label("Way Back", systemImage: "clock.arrow.circlepath")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.55))
+        ZStack {
+            Rectangle()
+                .fill(Color.clear)
+                .contentShape(Rectangle())
+                .gesture(headerDismissGesture)
             
-            Spacer()
-            
-            Button(action: { store.close() }) {
+            HStack(alignment: .center) {
+                Label("Way Back", systemImage: "clock.arrow.circlepath")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .allowsHitTesting(false)
+                
+                Spacer()
+                    .allowsHitTesting(false)
+                
                 Image(systemName: "xmark.circle.fill")
                     .font(.title3)
                     .foregroundStyle(.white.opacity(0.35))
                     .symbolRenderingMode(.hierarchical)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .highPriorityGesture(
+                        TapGesture().onEnded {
+                            performDismiss(fromDrag: false)
+                        }
+                    )
+                    .accessibilityLabel("Way Back を閉じる")
+                    .accessibilityAddTraits(.isButton)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Way Back")
+            .padding(.horizontal, 22)
         }
-        .padding(.horizontal, 22)
-        .padding(.bottom, 6)
+        .frame(height: headerHeight)
+        .padding(.top, 52 - 24)
     }
     
     // MARK: -
@@ -153,12 +255,9 @@ struct WayBackView: View {
                 }
             }
             .allowsHitTesting(false)
-            
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { store.close() }
         }
         .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 }
 

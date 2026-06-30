@@ -39,7 +39,7 @@
 		1419CF672FF337D6004AFF99 /* DebugSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF662FF337D6004AFF99 /* DebugSettings.swift */; };
 		1419CF692FF337F5004AFF99 /* AIInsightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF682FF337F5004AFF99 /* AIInsightView.swift */; };
 		1419CF6B2FF337FC004AFF99 /* MiniPlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF6A2FF337FC004AFF99 /* MiniPlayerBar.swift */; };
-		1419CF6D2FF3520E004AFF99 /* SquishyEdgeEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF6C2FF3520B004AFF99 /* SquishyEdgeEffect.swift */; };
+		1419CF6D2FF3520E004AFF99 /* WayBackSquishyModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF6C2FF3520B004AFF99 /* WayBackSquishyModifier.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,7 +56,7 @@
 		1419CF662FF337D6004AFF99 /* DebugSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSettings.swift; sourceTree = "<group>"; };
 		1419CF682FF337F5004AFF99 /* AIInsightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIInsightView.swift; sourceTree = "<group>"; };
 		1419CF6A2FF337FC004AFF99 /* MiniPlayerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerBar.swift; sourceTree = "<group>"; };
-		1419CF6C2FF3520B004AFF99 /* SquishyEdgeEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquishyEdgeEffect.swift; sourceTree = "<group>"; };
+		1419CF6C2FF3520B004AFF99 /* WayBackSquishyModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WayBackSquishyModifier.swift; sourceTree = "<group>"; };
 		14203EB22FF140DC00698514 /* AppDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDataManager.swift; sourceTree = "<group>"; };
 		14203EB42FF140DC00698514 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		14203EB62FF140DC00698514 /* CalendarCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarCellView.swift; sourceTree = "<group>"; };
@@ -135,7 +135,6 @@
 		14203EC12FF140DC00698514 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				1419CF6C2FF3520B004AFF99 /* SquishyEdgeEffect.swift */,
 				14203EBD2FF140DC00698514 /* CacheSettings.swift */,
 				14203EBE2FF140DC00698514 /* CalendarModels.swift */,
 				14203EBF2FF140DC00698514 /* Models.swift */,
@@ -172,6 +171,7 @@
 		14203ECD2FF140DC00698514 /* WayBack */ = {
 			isa = PBXGroup;
 			children = (
+				1419CF6C2FF3520B004AFF99 /* WayBackSquishyModifier.swift */,
 				14203EC92FF140DC00698514 /*  Waybackview.swift */,
 				14203ECA2FF140DC00698514 /* Waybackcard.swift */,
 				14203ECB2FF140DC00698514 /* Waybackcardstack.swift */,
@@ -271,7 +271,7 @@
 				1419CF612FF2531F004AFF99 /* WeatherKitClient.swift in Sources */,
 				1419CF692FF337F5004AFF99 /* AIInsightView.swift in Sources */,
 				1419CF402FF142A2004AFF99 /* CalendarView.swift in Sources */,
-				1419CF6D2FF3520E004AFF99 /* SquishyEdgeEffect.swift in Sources */,
+				1419CF6D2FF3520E004AFF99 /* WayBackSquishyModifier.swift in Sources */,
 				1419CF672FF337D6004AFF99 /* DebugSettings.swift in Sources */,
 				1419CF412FF142A2004AFF99 /* DayDetailView.swift in Sources */,
 				1419CF632FF25341004AFF99 /* HapticsManager.swift in Sources */,
