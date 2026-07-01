@@ -42,6 +42,7 @@
 		1419CF6D2FF3520E004AFF99 /* WayBackSquishyModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF6C2FF3520B004AFF99 /* WayBackSquishyModifier.swift */; };
 		14B23BC52FF4B5BD00146CB1 /* CalendarWeekStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B23BC42FF4B5BD00146CB1 /* CalendarWeekStripView.swift */; };
 		14B23BC72FF4BA9700146CB1 /* CalendarDayTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B23BC62FF4BA9700146CB1 /* CalendarDayTimelineView.swift */; };
+		14B23BC92FF4E26300146CB1 /* SpotlightSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B23BC82FF4E26300146CB1 /* SpotlightSearchView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,6 +84,7 @@
 		14203ECF2FF140DC00698514 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		14B23BC42FF4B5BD00146CB1 /* CalendarWeekStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarWeekStripView.swift; sourceTree = "<group>"; };
 		14B23BC62FF4BA9700146CB1 /* CalendarDayTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayTimelineView.swift; sourceTree = "<group>"; };
+		14B23BC82FF4E26300146CB1 /* SpotlightSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightSearchView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +136,7 @@
 				1419CF6A2FF337FC004AFF99 /* MiniPlayerBar.swift */,
 				14B23BC42FF4B5BD00146CB1 /* CalendarWeekStripView.swift */,
 				14B23BC62FF4BA9700146CB1 /* CalendarDayTimelineView.swift */,
+				14B23BC82FF4E26300146CB1 /* SpotlightSearchView.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
@@ -279,6 +282,7 @@
 				1419CF402FF142A2004AFF99 /* CalendarView.swift in Sources */,
 				1419CF6D2FF3520E004AFF99 /* WayBackSquishyModifier.swift in Sources */,
 				1419CF672FF337D6004AFF99 /* DebugSettings.swift in Sources */,
+				14B23BC92FF4E26300146CB1 /* SpotlightSearchView.swift in Sources */,
 				1419CF412FF142A2004AFF99 /* DayDetailView.swift in Sources */,
 				1419CF632FF25341004AFF99 /* HapticsManager.swift in Sources */,
 				1419CF422FF142A2004AFF99 /* TopBarView.swift in Sources */,

@@ -61,7 +61,12 @@ struct CalendarView: View {
             VStack(spacing: 0) {
                 TopBarView(
                     title: store.navigationTitle,
-                    onSettings: { showSettings = true }
+                    onSettings: { showSettings = true },
+                    onSearch: {
+                        withAnimation(.easeInOut(duration: 0.22)) {
+                            store.isSearchPresented = true
+                        }
+                    }
                 )
                 
                 // ── ハーフモーダル中だけ出る「月／予定」切り替えセグメント ──
@@ -149,6 +154,14 @@ struct CalendarView: View {
             
             // ── 2. フローティングバー / ミニプレーヤー ────────
             bottomArea(store: store)
+        }
+        // ── 2.5 Spotlight風グローバル検索オーバーレイ ──────────
+        .spotlightSearchOverlay(store: store, externalCalendar: externalCalendar) { date in
+            // 検索結果タップ：ミニプレーヤーを畳み、対象日へスクロールしつつ詳細を開く
+            miniPlayer.hide()
+            withAnimation(.snappy) {
+                store.revealAndSelect(date)
+            }
         }
         // ── 3. Way Back オーバーレイ ──────────────────────────
         .wayBackFullScreen(store: wayBack, referenceDate: store.selectedDate)

@@ -30,6 +30,14 @@ final class CalendarStore {
     /// 現在スクロールで一番上に見えている月（ScrollPosition と連動）。
     var visibleMonthID: Date?
 
+    // MARK: - Spotlight風グローバル検索
+
+    /// 検索オーバーレイの表示状態。
+    var isSearchPresented: Bool = false
+
+    /// 検索クエリ文字列。
+    var searchText: String = ""
+
     private let calendar: Calendar
     private let client  = WeatherAPIClient()
     private let cache:   ForecastCache
@@ -135,6 +143,23 @@ final class CalendarStore {
             visibleMonthID = newMonthID
         }
         prefetchMonth(id: newMonthID)
+    }
+
+    /// Spotlight検索結果からの遷移用。
+    /// 指定日を選択状態にし（＝詳細モーダルが開く）、その日を含む月へスクロール位置も合わせる。
+    func revealAndSelect(_ date: Date) {
+        let day = calendar.startOfDay(for: date)
+        selectedDate = day
+        loadForecast(for: day)
+
+        let monthID = CalendarStore.startOfMonth(for: day, calendar: calendar)
+        visibleMonthID = monthID
+        prefetchMonth(id: monthID)
+    }
+
+    /// 検索候補生成用に、全期間の CalendarDay を一括で返す（月をまたいだ検索に使用）。
+    var allDays: [CalendarDay] {
+        months.flatMap(\.days)
     }
 
     // MARK: - 予報読み込み（デバッグモード対応）
