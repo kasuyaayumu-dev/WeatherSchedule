@@ -40,6 +40,8 @@
 		1419CF692FF337F5004AFF99 /* AIInsightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF682FF337F5004AFF99 /* AIInsightView.swift */; };
 		1419CF6B2FF337FC004AFF99 /* MiniPlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF6A2FF337FC004AFF99 /* MiniPlayerBar.swift */; };
 		1419CF6D2FF3520E004AFF99 /* WayBackSquishyModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1419CF6C2FF3520B004AFF99 /* WayBackSquishyModifier.swift */; };
+		14B23BC52FF4B5BD00146CB1 /* CalendarWeekStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B23BC42FF4B5BD00146CB1 /* CalendarWeekStripView.swift */; };
+		14B23BC72FF4BA9700146CB1 /* CalendarDayTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B23BC62FF4BA9700146CB1 /* CalendarDayTimelineView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -79,6 +81,8 @@
 		14203ECB2FF140DC00698514 /* Waybackcardstack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Waybackcardstack.swift; sourceTree = "<group>"; };
 		14203ECC2FF140DC00698514 /* Waybackstore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Waybackstore.swift; sourceTree = "<group>"; };
 		14203ECF2FF140DC00698514 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		14B23BC42FF4B5BD00146CB1 /* CalendarWeekStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarWeekStripView.swift; sourceTree = "<group>"; };
+		14B23BC62FF4BA9700146CB1 /* CalendarDayTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarDayTimelineView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +132,8 @@
 				1419CF582FF231F2004AFF99 /* CalendarEventEditView.swift */,
 				1419CF682FF337F5004AFF99 /* AIInsightView.swift */,
 				1419CF6A2FF337FC004AFF99 /* MiniPlayerBar.swift */,
+				14B23BC42FF4B5BD00146CB1 /* CalendarWeekStripView.swift */,
+				14B23BC62FF4BA9700146CB1 /* CalendarDayTimelineView.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
@@ -281,8 +287,10 @@
 				1419CF452FF142A2004AFF99 /* Models.swift in Sources */,
 				1419CF5B2FF2322F004AFF99 /* WeatherScheduleApp.swift in Sources */,
 				1419CF462FF142A2004AFF99 /* WeatherCondition.swift in Sources */,
+				14B23BC72FF4BA9700146CB1 /* CalendarDayTimelineView.swift in Sources */,
 				1419CF472FF142A2004AFF99 /* ForecastCache.swift in Sources */,
 				1419CF482FF142A2004AFF99 /* NetworkMonitor.swift in Sources */,
+				14B23BC52FF4B5BD00146CB1 /* CalendarWeekStripView.swift in Sources */,
 				1419CF492FF142A2004AFF99 /* WeatherAPIClient.swift in Sources */,
 				1419CF4A2FF142A2004AFF99 /* SettingsView.swift in Sources */,
 				1419CF4B2FF142A2004AFF99 /* StopAppView.swift in Sources */,

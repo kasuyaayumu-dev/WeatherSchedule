@@ -34,49 +34,118 @@ struct CalendarView: View {
     /// DayDetailView シートの現在の高さ。Way Back を閉じた直後に .medium へ戻すために使う。
     @State private var detailDetent: PresentationDetent = .large
     
+    /// ハーフモーダル（.medium）時に背景をどちらで見せるか。
+    /// ユーザーがセグメントで手動切り替えする（自動では切り替えない）。
+    @State private var backgroundMode: BackgroundMode = .month
+    
     private var isFilterActive: Bool {
         weatherFilter != .all
     }
     
     private let weekdaySymbols = ["S", "M", "T", "W", "T", "F", "S"]
     
+    /// ハーフモーダル時の背景表示モード。
+    private enum BackgroundMode: String, CaseIterable {
+        case month = "月"
+        case daySchedule = "予定"
+    }
+    
     var body: some View {
         @Bindable var store = store
         
         ZStack(alignment: .bottom) {
             // ── 1. カレンダー本体 ──────────────────────────────
+            // 日付詳細モーダルが半展開（.medium）で選択中のときは、
+            // 月グリッドの代わりにネイティブ Calendar 風の「週ストリップ + 予定リスト」を出す。
+            // フル展開時（背景操作不可）や未選択時は、これまで通り月グリッドを表示する。
             VStack(spacing: 0) {
                 TopBarView(
                     title: store.navigationTitle,
                     onSettings: { showSettings = true }
                 )
                 
-                weekdayHeader
-                Divider()
-                
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(store.months) { month in
-                            CalendarMonthView(
-                                month: month,
-                                condition: { store.condition(for: $0.date) ?? $0.condition },
-                                forecast: { store.forecast(for: $0.date) },
-                                events: { externalCalendar.events(for: $0.date) },
-                                displayMode: displayMode,
-                                weatherFilter: weatherFilter,
-                                isSelected: { store.isSelected($0) }
-                            ) { day in
-                                withAnimation(.snappy) { store.toggleSelection(day) }
-                            }
-                            .id(month.id)
+                // ── ハーフモーダル中だけ出る「月／予定」切り替えセグメント ──
+                if store.selectedDate != nil, detailDetent == .medium {
+                    Picker("表示切り替え", selection: $backgroundMode) {
+                        ForEach(BackgroundMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
                         }
                     }
-                    .padding(.bottom, miniPlayer.isVisible ? 140 : 88)
-                    .scrollTargetLayout()
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
                 }
-                .scrollPosition(id: $store.visibleMonthID, anchor: .top)
+                
+                if let selectedDate = store.selectedDate, detailDetent == .medium, backgroundMode == .daySchedule {
+                    CalendarWeekStripView(
+                        selectedDate: selectedDate,
+                        events: { externalCalendar.events(for: $0) },
+                        onSelect: { date in
+                            withAnimation(.snappy) {
+                                store.toggleSelection(CalendarDay(date: date))
+                            }
+                        },
+                        onSwipeDay: { offset in
+                            withAnimation(.snappy) {
+                                store.selectAdjacentDay(offset)
+                            }
+                            HapticsManager.monthChanged()
+                        },
+                        onSwipeBackToMonth: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                backgroundMode = .month
+                            }
+                            HapticsManager.monthChanged()
+                        }
+                    )
+                    .transition(.opacity)
+                } else {
+                    weekdayHeader
+                    Divider()
+                    
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(store.months) { month in
+                                CalendarMonthView(
+                                    month: month,
+                                    condition: { store.condition(for: $0.date) ?? $0.condition },
+                                    forecast: { store.forecast(for: $0.date) },
+                                    events: { externalCalendar.events(for: $0.date) },
+                                    displayMode: displayMode,
+                                    weatherFilter: weatherFilter,
+                                    isSelected: { store.isSelected($0) }
+                                ) { day in
+                                    withAnimation(.snappy) { store.toggleSelection(day) }
+                                }
+                                .id(month.id)
+                            }
+                        }
+                        .padding(.bottom, miniPlayer.isVisible ? 140 : 88)
+                        .scrollTargetLayout()
+                    }
+                    .scrollPosition(id: $store.visibleMonthID, anchor: .top)
+                    .transition(.opacity)
+                    // ── ハーフモーダル中：月 → 予定 への切り替えスワイプ（左） ──
+                    // 縦スクロールと衝突しないよう、ほぼ水平方向の指の動きのときだけ反応する。
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 24)
+                            .onEnded { value in
+                                guard store.selectedDate != nil, detailDetent == .medium else { return }
+                                let dx = value.translation.width
+                                let dy = value.translation.height
+                                guard abs(dx) > abs(dy) * 1.5, dx < -60 else { return }
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    backgroundMode = .daySchedule
+                                }
+                                HapticsManager.monthChanged()
+                            }
+                    )
+                }
             }
             .background(Color(.systemGroupedBackground))
+            .animation(.easeInOut(duration: 0.2), value: detailDetent)
+            .animation(.easeInOut(duration: 0.2), value: backgroundMode)
             
             // ── 2. フローティングバー / ミニプレーヤー ────────
             bottomArea(store: store)
@@ -96,7 +165,16 @@ struct CalendarView: View {
                 miniPlayer.hide()
             }
             if newDay != nil {
-                detailDetent = .large
+                detailDetent = .medium
+            } else {
+                backgroundMode = .month
+            }
+        }
+        // 🌟追加: 週ストリップ表示（.medium）に入るタイミングで予定を読み込んでおく
+        // （表示モードが天気アイコン等で、予定データ未取得のことがあるため）
+        .onChange(of: detailDetent) { _, newDetent in
+            if newDetent == .medium {
+                Task { await externalCalendar.refresh(months: store.months) }
             }
         }
         .onChange(of: store.visibleMonthID) { _, newID in

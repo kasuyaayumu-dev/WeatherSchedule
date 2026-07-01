@@ -118,6 +118,25 @@ final class CalendarStore {
         loadForecast(for: selectedDate)
     }
 
+    /// 現在選択中の日付から前後にずらして選択し直す。
+    /// 半展開モーダル（.medium）の裏でカレンダーを横スワイプしたときに使う。
+    /// - Parameter offset: 進める日数（次の日なら +1、前の日なら -1）
+    func selectAdjacentDay(_ offset: Int) {
+        guard let current = selectedDate,
+              let newDate = calendar.date(byAdding: .day, value: offset, to: current) else { return }
+
+        let newDay = calendar.startOfDay(for: newDate)
+        selectedDate = newDay
+        loadForecast(for: newDay)
+
+        // 月をまたいだ場合は表示中の月（ヘッダー・スクロール位置）も追従させる。
+        let newMonthID = CalendarStore.startOfMonth(for: newDay, calendar: calendar)
+        if newMonthID != visibleMonthID {
+            visibleMonthID = newMonthID
+        }
+        prefetchMonth(id: newMonthID)
+    }
+
     // MARK: - 予報読み込み（デバッグモード対応）
 
     private func loadForecast(for date: Date) {
